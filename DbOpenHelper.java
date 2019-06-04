@@ -68,7 +68,7 @@ public class DbOpenHelper {
         values.put(DataBases.CreateDB.Latitude, Latitude);
         values.put(DataBases.CreateDB.longitude, longitude);
         values.put(DataBases.CreateDB.time, time);
-        
+        //mDB.execSQL("delete from " + _TABLENAME0);
         return mDB.update(DataBases.CreateDB._TABLENAME0, values, "_id=" + id, null) > 0;
     }
 
@@ -88,7 +88,7 @@ public class DbOpenHelper {
 
     // sort by column
     public Cursor sortColumn(String sort){
-        Cursor c = mDB.rawQuery( "SELECT * FROM usertable ORDER BY " + sort + ";", null);
+        Cursor c = mDB.rawQuery( "SELECT * FROM GPStable ORDER BY " + sort + ";", null);
         return c;
     }
 }

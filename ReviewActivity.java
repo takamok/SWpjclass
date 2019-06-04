@@ -52,7 +52,7 @@ public class ReviewActivity extends AppCompatActivity implements View.OnClickLis
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.activity_review);
         btn_Insert = (Button) findViewById(R.id.btn_insert);
         btn_Insert.setOnClickListener(this);
         btn_Update = (Button) findViewById(R.id.btn_update);
@@ -121,7 +121,7 @@ public class ReviewActivity extends AppCompatActivity implements View.OnClickLis
             Log.d("Long Click", "position = " + position);
             nowIndex = parseLong(arrayIndex.get(position));
             String[] nowData = arrayData.get(position).split("\\s+");
-            String viewData = nowData[0] + ", " + nowData[1] + ", " + nowData[2] + ", " + nowData[3];
+            String viewData = nowData[0] + ", " + nowData[1] + ", " + nowData[2];
             AlertDialog.Builder dialog = new AlertDialog.Builder(ReviewActivity.this);
             dialog.setTitle("데이터 삭제")
                     .setMessage("해당 데이터를 삭제 하시겠습니까?" + "\n" + viewData)
@@ -153,7 +153,7 @@ public class ReviewActivity extends AppCompatActivity implements View.OnClickLis
         arrayData.clear();
         arrayIndex.clear();
         while(iCursor.moveToNext()){
-            String tempIndex = iCursor.getString(iCursor.getColumnIndex("_Latitude"));
+            String tempIndex = iCursor.getString(iCursor.getColumnIndex("_id"));
             String tempLatitude = iCursor.getString(iCursor.getColumnIndex("Latitude"));
             tempLatitude = setTextLength(tempLatitude,10);
             String templongitude = iCursor.getString(iCursor.getColumnIndex("longitude"));
