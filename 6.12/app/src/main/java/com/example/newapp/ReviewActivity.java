@@ -182,3 +182,159 @@ public class ReviewActivity extends AppCompatActivity implements View.OnClickLis
         }
         return text;
     }
+    @Override
+    public void onClick(View v) {
+        switch (v.getId()) {
+            //데이터 삽입
+            case R.id.btn_insert:
+                Latitude = edit_Latitude.getText().toString();
+                longitude = edit_longitude.getText().toString();
+                time = edit_time.getText().toString();
+                mDbOpenHelper.open();
+                mDbOpenHelper.insertColumn(Latitude, longitude, time);
+                String[] sendData = {Latitude, longitude, time};
+                //데이터 저장
+                new postData().execute(sendData);
+                showDatabase(sort);
+                setInsertMode();
+                edit_Latitude.requestFocus();
+                edit_Latitude.setCursorVisible(true);
+                break;
+
+            //데이터 업데이트 => 전체삭제말고 안의 데이터 가져오는걸로 변경하자
+            case R.id.btn_update:
+                /*Latitude = edit_Latitude.getText().toString();
+                longitude = edit_longitude.getText().toString();
+                time = edit_time.getText().toString();
+                //get 데이터 베이스 정보 받아옴
+                new getData().execute();
+                mDbOpenHelper.updateColumn(nowIndex,Latitude, longitude, time);
+                showDatabase(sort);
+                setInsertMode();
+                edit_Latitude.requestFocus();
+                edit_Latitude.setCursorVisible(true);*/
+                new getData().execute();
+                break;
+
+            //선택
+            case R.id.btn_select:
+                showDatabase(sort);
+                break;
+
+            //경도순
+            case R.id.check_Latitude:
+                check_longitude.setChecked(false);
+                check_time.setChecked(false);
+                sort = "Latitude";
+                break;
+
+            //위도순
+            case R.id.check_longitude:
+                check_Latitude.setChecked(false);
+                check_time.setChecked(false);
+                sort = "longitude";
+                break;
+
+            //시간순
+            case R.id.check_time:
+                check_Latitude.setChecked(false);
+                check_longitude.setChecked(false);
+                sort = "time";
+                break;
+        }
+    }
+
+    //6.5 파일 내부에 gpspost.php, gpsget.php 파일 삽입
+    //데이터 받아아는 부분
+    class getData extends AsyncTask<String, Void, String> {
+        protected String doInBackground(String... Params) {
+            //받은데이터 sql에 저장    서버 연결을 위한 접속ip
+            try{                   //localhost, 211.183.34.181 서버 열어둠
+                URL server = new URL("http://211.183.34.181/gpsget.php");
+                HttpURLConnection urlConnection = (HttpURLConnection) server.openConnection();
+                //url 받아옴
+                urlConnection.setRequestMethod("GET");
+                urlConnection.setDoInput(true);
+                urlConnection.setDoOutput(true);
+                InputStream is = new BufferedInputStream(urlConnection.getInputStream());
+                BufferedReader br = new BufferedReader(new InputStreamReader(is));
+                StringBuffer sb = new StringBuffer("");
+                String line = "";
+                while ((line = br.readLine()) != null) {
+                    sb.append(line);
+                    break;
+                }
+                br.close();
+                return sb.toString();
+            } catch (Exception e) {
+                return new String("Exception: " + e.getMessage());
+            }
+        }
+
+        @Override
+        protected void onPostExecute(String result){
+            if(result.startsWith("Exception")){
+                Log.e("getPeriod onPost: ", "Error: " + result);
+            }else{
+                Log.d("getPeriod onPost: ", "Get Result: " + result);
+                ArrayList<String> list = new ArrayList<String>();
+                String[] list_DB = result.split("<br>");
+                for (int i=0; i<list_DB.length; i++){
+                    String[] tempResult = list_DB[i].split(",");
+                    String listResult = "Latitude: " + tempResult[0] + "\nlongitude: " + tempResult[1] + "\ntime: " + tempResult[2];
+                    list.add(listResult);
+                }
+                arrayAdapter.clear();
+                arrayAdapter.addAll(list);
+                arrayAdapter.notifyDataSetChanged();
+            }
+        }
+    }
+    // mysql에서 삽입
+    class postData extends AsyncTask<String, Void, String> {
+        protected String doInBackground(String... Params) {
+            StringBuffer sb = new StringBuffer();
+            sb.append("Latitude").append("=").append(Params[0]).append("&");
+            sb.append("longitude").append("=").append(Params[1]).append("&");
+            sb.append("time").append("=").append(Params[2]);
+
+            Log.d("sendData", "String Buffer: " + sb.toString());
+            try{                                    //localhost
+                URL server = new URL("http://211.183.34.181/gpspost.php");
+                Log.d("sendData", "URL: " + server.toString());
+                HttpURLConnection urlConnection = (HttpURLConnection) server.openConnection();
+                urlConnection.setRequestMethod("POST");
+                urlConnection.setDoInput(true);
+                urlConnection.setDoOutput(true);
+
+                urlConnection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+                OutputStream os = urlConnection.getOutputStream();
+                os.write(sb.toString().getBytes("EUC-KR"));
+                os.flush();
+                os.close();
+                String response = "";
+
+                //http 서버 연결
+                if (urlConnection.getResponseCode() == HttpURLConnection.HTTP_OK) {
+                    Log.d("sendData", "Connect to server");
+                    String line;
+                    BufferedReader br = new BufferedReader(new InputStreamReader(urlConnection.getInputStream()));
+                    while ((line = br.readLine()) != null) {
+                        response += line;
+                    }
+                }else{// 서버 연결 메세지
+                    Log.d("sendData", "DO NOT connect to server");
+                }
+                urlConnection.disconnect();
+                return response;
+            }catch (Exception e) {
+                return new String("Exception: " + e.getMessage());
+            }
+        }
+
+        @Override
+        protected void onPostExecute(String result){
+            Log.d("sendData", "Result: " + result);
+        }
+    }
+}
