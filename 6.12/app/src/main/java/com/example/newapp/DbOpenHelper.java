@@ -41,4 +41,46 @@ public class DbOpenHelper {
         mDB = mDBHelper.getWritableDatabase();
         return this;
     }
+    public void create(){
+        mDBHelper.onCreate(mDB);
+    }
+    public void close(){
+        mDB.close();
+    }
+    // Insert DB
+    public long insertColumn(String Latitude, String longitude, String time){
+        ContentValues values = new ContentValues();
+        values.put(DataBases.CreateDB.Latitude, Latitude);
+        values.put(DataBases.CreateDB.longitude, longitude);
+        values.put(DataBases.CreateDB.time, time);
+        return mDB.insert(DataBases.CreateDB._TABLENAME0, null, values);
+    }
+    // Update DB
+    public boolean updateColumn(long id, String Latitude, String longitude, String time){
+        ContentValues values = new ContentValues();
+        values.put(DataBases.CreateDB.Latitude, Latitude);
+        values.put(DataBases.CreateDB.longitude, longitude);
+        values.put(DataBases.CreateDB.time, time);
+        //mDB.execSQL("delete from " + _TABLENAME0);
+        return mDB.update(DataBases.CreateDB._TABLENAME0, values, "_id=" + id, null) > 0;
+    }
+    // Delete All
+    public void deleteAllColumns() {
+        mDB.delete(DataBases.CreateDB._TABLENAME0, null, null);
+    }
+    // Delete DB
+    public boolean deleteColumn(long id){
+        return mDB.delete(DataBases.CreateDB._TABLENAME0, "_id="+id, null) > 0;
+    }
+    // Select DB
+    public Cursor selectColumns(){
+        return mDB.query(DataBases.CreateDB._TABLENAME0, null, null, null, null, null, null);
+    }
+    // sort by column
+    public Cursor sortColumn(String sort){
+        Cursor c = mDB.rawQuery( "SELECT * FROM GPStable ORDER BY " + sort + ";", null);
+        return c;
+    }
+
+
 }

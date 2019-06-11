@@ -2,6 +2,7 @@ package com.example.newapp;
 
 import android.content.Intent;
 import android.database.Cursor;
+import android.graphics.Color;
 import android.media.ExifInterface;
 import android.net.Uri;
 import android.provider.MediaStore;
@@ -14,16 +15,28 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import net.daum.mf.map.api.MapPOIItem;
+import net.daum.mf.map.api.MapPoint;
+import net.daum.mf.map.api.MapPolyline;
 import net.daum.mf.map.api.MapView;
 
 import java.io.IOException;
 
 public class MainActivity extends AppCompatActivity {
 
-    private static int PICK_IMAGE_REQUEST = 1;
-    public TextView mView, metadata,mTimestamp;
     Button Gallary;
     Button Review;
+    public TextView mView, metadata,mTimestamp;
+    private static int PICK_IMAGE_REQUEST = 1;
+    private final int PERMISSIONS_REQUEST_RESULT = 1;
+    private boolean valid = false;
+    public static Float latitude, longitude;
+    public static String time;
+    private Float[] latline = new Float[10]; //초기 배열 값 설정 증가 가능
+    private Float[] longline = new Float[10];
+    int length = 0;
+    private String count;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -86,11 +99,116 @@ public class MainActivity extends AppCompatActivity {
         String path = c.getString(index);
         try {
             ExifInterface exif = new ExifInterface(path);
-            //호출
+            GeoDegree(exif);
         } catch (IOException e) {
             e.printStackTrace();
             Toast.makeText(this, "Error!", Toast.LENGTH_LONG).show();
         }
         return path;
     }
+
+
+
+
+    public void GeoDegree(ExifInterface exif) {
+
+        String attrLATITUDE = exif.getAttribute(ExifInterface.TAG_GPS_LATITUDE);
+        String attrLATITUDE_REF = exif.getAttribute(ExifInterface.TAG_GPS_LATITUDE_REF);
+        String attrLONGITUDE = exif.getAttribute(ExifInterface.TAG_GPS_LONGITUDE);
+        String attrLONGITUDE_REF = exif.getAttribute(ExifInterface.TAG_GPS_LONGITUDE_REF);
+        String Timeset = exif.getAttribute(ExifInterface.TAG_DATETIME);
+
+        if ((attrLATITUDE != null) && (attrLATITUDE_REF != null) && (attrLONGITUDE != null)
+                && (attrLONGITUDE_REF != null)) {
+            valid = true;
+            if (attrLATITUDE_REF.equals("N")) {
+                latitude = convertToDegree(attrLATITUDE);
+            } else {
+                latitude = 0 - convertToDegree(attrLATITUDE);
+            }
+            if (attrLONGITUDE_REF.equals("E")) {
+                longitude = convertToDegree(attrLONGITUDE);
+            } else {
+                longitude = 0 - convertToDegree(attrLONGITUDE);
+            }
+            time =  converToTime(Timeset);
+        }
+
+        mView.setText(longitude.toString());
+        metadata.setText(latitude.toString());
+        mTimestamp.setText(time);
+
+        MapView mapView = new MapView(this);
+        ViewGroup mapViewContainer = (ViewGroup) findViewById(R.id.map_view);
+        mapViewContainer.addView(mapView);
+
+        count = String.valueOf(length);
+
+        MapPoint mapPoint = MapPoint.mapPointWithGeoCoord(latitude, longitude);
+        mapView.setMapCenterPoint(mapPoint, true);
+        MapPOIItem marker = new MapPOIItem();
+        marker.setItemName(count);
+        marker.setTag(0);
+        marker.setMapPoint(mapPoint);
+        marker.setMarkerType(MapPOIItem.MarkerType.BluePin);
+        marker.setSelectedMarkerType(MapPOIItem.MarkerType.RedPin);
+        mapView.addPOIItem(marker);
+
+        MapPolyline polyline = new MapPolyline();
+        polyline.setTag(1000);
+        polyline.setLineColor(Color.argb(128, 255, 51, 0));
+
+        for(int i = length; i <= length; i++){
+            latline[i] = latitude;
+            longline[i] = longitude;
+        }
+        for (int j = 0; j < length+1; j++){
+            polyline.addPoint(MapPoint.mapPointWithGeoCoord(latline[j], longline[j]));
+            mapView.addPolyline(polyline);
+        }
+        length++;
+    }
+
+    private String converToTime(String Time)
+    {
+        String[] time = Time.split(":",5);
+        String D0 = new String(time[0]);
+        String D1 = new String(time[1]);
+        String D2 = new String(time[2]);
+        String D3 = new String(time[3]);
+        String D4 = new String(time[4]);
+        String FloatA = D0+D1+D2+D3+D4;
+        String[] FloatB =  FloatA.split("\\s+",3);
+        String T0 = new String(FloatB[0]);
+        String T1 = new String(FloatB[1]);
+        String FloatC = T0+T1;
+        return FloatC;
+    }
+
+    private Float convertToDegree(String stringDMS) {
+        Float result = null;
+        String[] DMS = stringDMS.split(",", 3);
+        String[] stringD = DMS[0].split("/", 2);
+        Double D0 = new Double(stringD[0]);
+        Double D1 = new Double(stringD[1]);
+        Double FloatD = D0 / D1;
+        String[] stringM = DMS[1].split("/", 2);
+        Double M0 = new Double(stringM[0]);
+        Double M1 = new Double(stringM[1]);
+        Double FloatM = M0 / M1;
+        String[] stringS = DMS[2].split("/", 2);
+        Double S0 = new Double(stringS[0]);
+        Double S1 = new Double(stringS[1]);
+        Double FloatS = S0 / S1;
+        result = new Float(FloatD + (FloatM / 60) + (FloatS / 3600));
+        return result;
+    }
+
+    @Override
+    public String toString() {
+        return (String.valueOf(latitude) + ", " + String.valueOf(longitude));
+    }
 }
+
+
+
